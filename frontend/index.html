@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ETL Automation — PPT ↔ Excel Intelligence</title>
+  <meta name="description" content="Upload PowerPoint and Excel files. Automatically extract instructions, match data, render charts and paste them back into the PPT." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ══ TOP HEADER BAR ══════════════════════════════════════════════════════ -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">⚡</div>
+    <span class="brand-name">ETL<span class="brand-accent">Studio</span></span>
+  </div>
+  <div class="topbar-actions">
+    <div class="project-badge" id="projectBadge">No Project</div>
+    <button class="btn btn-sort" id="btnSort" disabled>
+      <span class="btn-icon">⇅</span> Sort Instructions
+    </button>
+    <button class="btn btn-map" id="btnMap" disabled>
+      <span class="btn-icon">🗺</span> Map & Paste
+    </button>
+    <button class="btn btn-dl" id="btnDownloadPPT" disabled>
+      <span class="btn-icon">⬇</span> Download PPT
+    </button>
+    <button class="btn btn-dl-xls" id="btnDownloadXLS" disabled>
+      <span class="btn-icon">⬇</span> Download Excel
+    </button>
+  </div>
+</header>
+
+<!-- ══ MAIN LAYOUT ═════════════════════════════════════════════════════════ -->
+<div class="layout">
+
+  <!-- ── LEFT PANEL ────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Workflow</div>
+
+    <!-- Step 1 -->
+    <div class="step-card" id="card1">
+      <div class="step-header">
+        <div class="step-number">01</div>
+        <div class="step-label">Upload PPT</div>
+        <div class="step-status" id="status1">⬜</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">Upload a .pptx file. All shapes, boxes, arrows, symbols (↑↓→←%#) are extracted.</p>
+        <label class="file-btn" for="pptInput">
+          <span>Choose PPT File</span>
+          <input type="file" id="pptInput" accept=".ppt,.pptx" />
+        </label>
+        <div class="file-name" id="pptName">No file selected</div>
+        <button class="btn btn-primary w-full" id="btnUploadPPT" disabled>Extract Instructions</button>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step-card" id="card2">
+      <div class="step-header">
+        <div class="step-number">02</div>
+        <div class="step-label">Upload Excel</div>
+        <div class="step-status" id="status2">⬜</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">Upload a .xlsx file. Tables are scanned and names normalised (Table_1 ↔ Table 1).</p>
+        <label class="file-btn" for="excelInput">
+          <span>Choose Excel File</span>
+          <input type="file" id="excelInput" accept=".xls,.xlsx" />
+        </label>
+        <div class="file-name" id="excelName">No file selected</div>
+        <button class="btn btn-primary w-full" id="btnUploadExcel" disabled>Scan Tables</button>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step-card" id="card3">
+      <div class="step-header">
+        <div class="step-number">03</div>
+        <div class="step-label">Extract & Match</div>
+        <div class="step-status" id="status3">⬜</div>
+      </div>
+      <div class="step-body">
+        <p class="step-desc">Match PPT instructions to Excel tables and pull the data values.</p>
+        <button class="btn btn-primary w-full" id="btnProceed" disabled>Proceed</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ───────────────────────────────────────────────────── -->
+  <main class="content">
+
+    <!-- Welcome splash -->
+    <div class="splash" id="splash">
+      <div class="splash-icon">🔄</div>
+      <h1 class="splash-title">PPT ↔ Excel ETL Automation</h1>
+      <p class="splash-sub">Upload your PowerPoint and Excel files on the left to begin.<br/>Instructions, data extraction, and chart rendering happen automatically.</p>
+      <div class="cycle-diagram">
+        <div class="cycle-step">📄 PPT Instructions</div>
+        <div class="cycle-arrow">↓</div>
+        <div class="cycle-step">📊 Excel Tables</div>
+        <div class="cycle-arrow">↓</div>
+        <div class="cycle-step">🔍 Extract Data</div>
+        <div class="cycle-arrow">↓</div>
+        <div class="cycle-step">📈 Render Charts</div>
+        <div class="cycle-arrow">↓</div>
+        <div class="cycle-step">✅ Paste into PPT</div>
+      </div>
+    </div>
+
+    <!-- Instructions Table -->
+    <section class="panel" id="panelInstructions" style="display:none">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Extracted Instructions</h2>
+          <div class="panel-sub" id="instrCount">0 items found</div>
+        </div>
+        <div class="stat-row" id="statRow"></div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="instrTable">
+          <thead>
+            <tr>
+              <th data-col="id" class="sortable"># <span class="sort-icon">⇅</span></th>
+              <th data-col="slide_number" class="sortable">Slide <span class="sort-icon">⇅</span></th>
+              <th data-col="shape_name" class="sortable">Shape <span class="sort-icon">⇅</span></th>
+              <th data-col="type" class="sortable">Type <span class="sort-icon">⇅</span></th>
+              <th data-col="raw_text">Instruction / Symbol</th>
+            </tr>
+          </thead>
+          <tbody id="instrBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Excel Tables Panel -->
+    <section class="panel" id="panelExcel" style="display:none">
+      <div class="panel-header">
+        <h2 class="panel-title">Detected Excel Tables</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="excelTable">
+          <thead>
+            <tr>
+              <th>Sheet</th>
+              <th>Table Name</th>
+              <th>Normalised Name</th>
+              <th>Question Codes</th>
+              <th>Rows</th>
+              <th>Cols</th>
+            </tr>
+          </thead>
+          <tbody id="excelBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Match Results Panel -->
+    <section class="panel" id="panelMatch" style="display:none">
+      <div class="panel-header">
+        <h2 class="panel-title">Match Results</h2>
+        <div class="stat-row" id="matchStatRow"></div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="matchTable">
+          <thead>
+            <tr>
+              <th>Slide</th>
+              <th>Instruction</th>
+              <th>Type</th>
+              <th>Matched Table</th>
+              <th>Confidence</th>
+              <th>Score</th>
+              <th>Q-Codes</th>
+            </tr>
+          </thead>
+          <tbody id="matchBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Map & Paste Result -->
+    <section class="panel" id="panelResult" style="display:none">
+      <div class="panel-header">
+        <h2 class="panel-title">✅ Map & Paste Complete</h2>
+      </div>
+      <div class="result-grid" id="resultGrid"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══ TOAST ════════════════════════════════════════════════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══ LOADER ═══════════════════════════════════════════════════════════════ -->
+<div class="loader-overlay" id="loaderOverlay" style="display:none">
+  <div class="loader-box">
+    <div class="spinner"></div>
+    <div class="loader-text" id="loaderText">Processing…</div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
